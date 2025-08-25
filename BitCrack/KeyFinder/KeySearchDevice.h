@@ -36,8 +36,8 @@ typedef struct {
 
 
 typedef struct {
-	secp256k1::uint256 privateKey;
-	secp256k1::uint256 x;
+	unsigned int privateKey[8];
+	unsigned int x[8];
 }ExportedKey;
 
 

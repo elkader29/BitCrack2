@@ -296,15 +296,15 @@ __global__ void exportResultsKernel(int pointsPerThread, unsigned int* privateKe
 		// Read the private key
 		unsigned int pWords[8];
 		readInt(privateKeys, i, pWords);
-		secp256k1::uint256 privateKey = secp256k1::uint256(pWords, secp256k1::uint256::BigEndian);
 
 		// Read the public key x-coordinate
 		unsigned int xWords[8];
 		readInt(xPtr, i, xWords);
-		secp256k1::uint256 x = secp256k1::uint256(xWords, secp256k1::uint256::BigEndian);
 
 		// Write to the output buffer
-		exportedKeys[keyIndex].privateKey = privateKey;
-		exportedKeys[keyIndex].x = x;
+		for(int j = 0; j < 8; j++) {
+			exportedKeys[keyIndex].privateKey[j] = pWords[j];
+			exportedKeys[keyIndex].x[j] = xWords[j];
+		}
 	}
 }

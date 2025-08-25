@@ -57,7 +57,9 @@ void KeyExporter::run()
         _device->getExportedKeys(exportedKeys);
 
         for (const auto& key : exportedKeys) {
-            _outputStream << key.privateKey.toString(16) << "," << key.x.toString(16) << std::endl;
+			secp256k1::uint256 privateKey(key.privateKey, secp256k1::uint256::BigEndian);
+			secp256k1::uint256 x(key.x, secp256k1::uint256::BigEndian);
+            _outputStream << privateKey.toString(16) << "," << x.toString(16) << std::endl;
         }
 
         _total += exportedKeys.size();
