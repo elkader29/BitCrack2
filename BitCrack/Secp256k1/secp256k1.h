@@ -305,14 +305,14 @@ namespace secp256k1 {
 			return ret;
 		}
 
-		bool isEven()
+		bool isEven() const
 		{
 			return (this->v[0] & 1) == 0;
 		}
 
-		std::string toString(int base = 16);
+		std::string toString(int base = 16) const;
 
-		uint64_t toUint64()
+		uint64_t toUint64() const
 		{
 			return ((uint64_t)this->v[1] << 32) | v[0];
 		}

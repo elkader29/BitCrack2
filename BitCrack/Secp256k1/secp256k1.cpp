@@ -689,7 +689,7 @@ static std::string removeLeadingZeros(std::string str)
 }
 
 
-std::string secp256k1::uint256::toString(int base)
+std::string secp256k1::uint256::toString(int base) const
 {
 	std::string s = "";
 
