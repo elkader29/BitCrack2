@@ -277,6 +277,14 @@ uint256 uint256::mod(uint32_t val) const
 	return result;
 }
 
+uint256 uint256::mod(const uint256& val) const
+{
+    uint256 quotient = this->div(val);
+    uint256 product = quotient.mul(val);
+    uint256 result = this->sub(product);
+    return result;
+}
+
 uint256 uint256::add(int val) const
 {
 	uint256 result(val);
