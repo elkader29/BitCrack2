@@ -79,6 +79,7 @@ public:
 
 	void clearPublicKeys();
 
+	unsigned int* getPrivateKeyBuffer();
 };
 
 #endif

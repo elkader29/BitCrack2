@@ -37,7 +37,15 @@ private:
 
 	int _searchMode;
 
+	bool _exportMode = false;
+
+	bool _randomMode = false;
+
 	std::vector<KeySearchResult> _results;
+
+	std::vector<ExportedKey> _exportedKeys;
+
+	ExportedKey* _devExportedKeys = NULL;
 
 	std::string _deviceName;
 
@@ -89,6 +97,8 @@ public:
 
 	virtual size_t getResults(std::vector<KeySearchResult>& results);
 
+	virtual size_t getExportedKeys(std::vector<ExportedKey>& keys);
+
 	virtual uint64_t keysPerStep();
 
 	virtual std::string getDeviceName();
@@ -99,6 +109,14 @@ public:
 
 	// Update stride
 	virtual void updateStride(const secp256k1::uint256& stride);
+
+	void doExportStep(const std::vector<secp256k1::uint256>& keys) override;
+
+	// Set export mode
+	void setExportMode(bool enabled);
+
+	// Set random mode
+	void setRandomMode(bool enabled);
 };
 
 #endif

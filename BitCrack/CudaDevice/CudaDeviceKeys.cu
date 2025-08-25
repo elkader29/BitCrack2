@@ -566,3 +566,8 @@ bool CudaDeviceKeys::selfTest(const std::vector<secp256k1::uint256>& privateKeys
 
 	return true;
 }
+
+unsigned int* CudaDeviceKeys::getPrivateKeyBuffer()
+{
+	return _devPrivate;
+}

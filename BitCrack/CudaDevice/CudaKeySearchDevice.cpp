@@ -58,6 +58,9 @@ CudaKeySearchDevice::CudaKeySearchDevice(int device, int threads, int pointsPerT
 	_device = device;
 
 	_pointsPerThread = pointsPerThread;
+
+	uint64_t numKeys = (uint64_t)_blocks * _threads * _pointsPerThread;
+	cudaCall(cudaMalloc(&_devExportedKeys, numKeys * sizeof(ExportedKey)));
 }
 
 void CudaKeySearchDevice::init(const secp256k1::uint256& start, int compression, int searchMode, const secp256k1::uint256& stride)
@@ -98,6 +101,9 @@ void CudaKeySearchDevice::init(const secp256k1::uint256& start, int compression,
 CudaKeySearchDevice::~CudaKeySearchDevice()
 {
 	_deviceKeys.clearPrivateKeys();
+	if (_devExportedKeys != NULL) {
+		cudaFree(_devExportedKeys);
+	}
 }
 
 void CudaKeySearchDevice::generateStartingPoints()
@@ -224,6 +230,25 @@ void CudaKeySearchDevice::doStep()
 	getResultsInternal();
 
 	_iterations++;
+}
+
+void CudaKeySearchDevice::doExportStep(const std::vector<secp256k1::uint256>& keys)
+{
+	// 1. Load random keys into the device
+	cudaCall(_deviceKeys.reInit(_blocks, _threads, _pointsPerThread, keys));
+
+	// 2. Generate public keys
+	for (int i = 0; i < 256; i++) {
+		cudaCall(_deviceKeys.doStep());
+	}
+
+	// 3. Collate results
+	callExportResultsKernel(_blocks, _threads, _pointsPerThread, _deviceKeys.getPrivateKeyBuffer(), _devExportedKeys);
+
+	// 4. Copy results to host
+	uint64_t numKeys = (uint64_t)_blocks * _threads * _pointsPerThread;
+	_exportedKeys.resize(numKeys);
+	cudaCall(cudaMemcpy(_exportedKeys.data(), _devExportedKeys, numKeys * sizeof(ExportedKey), cudaMemcpyDeviceToHost));
 }
 
 uint64_t CudaKeySearchDevice::keysPerStep()
@@ -441,6 +466,20 @@ size_t CudaKeySearchDevice::getResults(std::vector<KeySearchResult>& resultsOut)
 	return resultsOut.size();
 }
 
+size_t CudaKeySearchDevice::getExportedKeys(std::vector<ExportedKey>& keys)
+{
+	if (_exportedKeys.size() == 0) {
+		return 0;
+	}
+
+	for (int i = 0; i < _exportedKeys.size(); i++) {
+		keys.push_back(_exportedKeys[i]);
+	}
+	_exportedKeys.clear();
+
+	return keys.size();
+}
+
 secp256k1::uint256 CudaKeySearchDevice::getNextKey()
 {
 	uint64_t totalPoints = (uint64_t)_pointsPerThread * _threads * _blocks;
@@ -462,4 +501,14 @@ void CudaKeySearchDevice::updateStride(const secp256k1::uint256& stride)
 	cudaCall(setIncrementorPoint(p.x, p.y));
 
 	_iterations = 0;
+}
+
+void CudaKeySearchDevice::setExportMode(bool enabled)
+{
+	_exportMode = enabled;
+}
+
+void CudaKeySearchDevice::setRandomMode(bool enabled)
+{
+	_randomMode = enabled;
 }

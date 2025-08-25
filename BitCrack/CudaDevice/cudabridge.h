@@ -6,9 +6,12 @@
 #include<string>
 #include "../CudaUtil/cudaUtil.h"
 #include "../Secp256k1/secp256k1.h"
+#include "../KeyFinder/KeySearchDevice.h"
 
 
 void callKeyFinderKernel(int blocks, int threads, int points, bool useDouble, int compression, int searchMode);
+
+void callExportResultsKernel(int blocks, int threads, int pointsPerThread, unsigned int* privateKeys, ExportedKey* exportedKeys);
 
 void waitForKernel();
 

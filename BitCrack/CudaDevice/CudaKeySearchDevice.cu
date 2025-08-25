@@ -283,3 +283,28 @@ __global__ void keyFinderKernelWithDouble(int points, int compression, int searc
 {
 	doIterationWithDouble(points, compression, searchMode);
 }
+
+__global__ void exportResultsKernel(int pointsPerThread, unsigned int* privateKeys, ExportedKey* exportedKeys)
+{
+	unsigned int* xPtr = ec::getXPtr();
+
+	for (int i = 0; i < pointsPerThread; i++) {
+		int totalThreads = gridDim.x * blockDim.x;
+		int threadId = blockIdx.x * blockDim.x + threadIdx.x;
+		int keyIndex = i * totalThreads + threadId;
+
+		// Read the private key
+		unsigned int pWords[8];
+		readInt(privateKeys, i, pWords);
+		secp256k1::uint256 privateKey = secp256k1::uint256(pWords, secp256k1::uint256::BigEndian);
+
+		// Read the public key x-coordinate
+		unsigned int xWords[8];
+		readInt(xPtr, i, xWords);
+		secp256k1::uint256 x = secp256k1::uint256(xWords, secp256k1::uint256::BigEndian);
+
+		// Write to the output buffer
+		exportedKeys[keyIndex].privateKey = privateKey;
+		exportedKeys[keyIndex].x = x;
+	}
+}

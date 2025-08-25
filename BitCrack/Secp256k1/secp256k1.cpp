@@ -978,23 +978,38 @@ secp256k1::ecpoint secp256k1::parsePublicKey(const std::string& pubKeyString)
 	return p;
 }
 
-uint256 secp256k1::getRandomRange(uint256 min, uint256 max)
+// inclusive of min and max
+uint256 secp256k1::getRandom(uint256 min, uint256 max)
 {
-	uint256 result;
-	uint256 range = max.sub(min);
+    uint256 range = max.sub(min);
+    range = range.add(1);
 
-	unsigned char targetByteSize = (range.getBitRange() + 31) / 32;
+    uint256 result;
 
-	for (int i = 0; i < 8; i++) {
-		if (targetByteSize > i) {
-			result.v[i] = rnd.getChunk();
-			if (targetByteSize > i && targetByteSize <= i + 1 && range.v[i] != 0 && result.v[i] > range.v[i]) {
-				result.v[i] %= range.v[i];
-			}
-		}
-	}
+    // Generate a random 256-bit number
+    unsigned char randomBytes[32];
+    _rng.get(randomBytes, 32);
 
-	return result.add(min);
+    // Create a uint256 from the random bytes
+    unsigned int words[8];
+    for (int i = 0; i < 8; i++) {
+        words[i] = ((unsigned int)randomBytes[i * 4 + 3] << 24) |
+                   ((unsigned int)randomBytes[i * 4 + 2] << 16) |
+                   ((unsigned int)randomBytes[i * 4 + 1] << 8) |
+                   ((unsigned int)randomBytes[i * 4 + 0]);
+    }
+    result = uint256(words);
+
+    // Modulo to get it in range
+    // This is not perfectly uniform, but it's good enough for this purpose
+    if(!range.isZero()) {
+        result = result.mod(range);
+    }
+
+    // Add min to shift it to the correct range
+    result = result.add(min);
+
+    return result;
 }
 
 uint256 secp256k1::getRandom64(int32_t bits, std::vector<uint32_t>& rStrideHistory)

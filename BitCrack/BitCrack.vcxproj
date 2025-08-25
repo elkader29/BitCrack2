@@ -33,6 +33,7 @@
     <ClInclude Include="KeyFinder\KeyFinderShared.h" />
     <ClInclude Include="KeyFinder\KeySearchDevice.h" />
     <ClInclude Include="KeyFinder\KeySearchTypes.h" />
+    <ClInclude Include="KeyExporter\KeyExporter.h" />
     <ClInclude Include="Logger\Logger.h" />
     <ClInclude Include="Secp256k1\secp256k1.h" />
     <ClInclude Include="Util\util.h" />
@@ -51,6 +52,7 @@
     <ClCompile Include="KeyFinder\ConfigFile.cpp" />
     <ClCompile Include="KeyFinder\DeviceManager.cpp" />
     <ClCompile Include="KeyFinder\KeyFinder.cpp" />
+    <ClCompile Include="KeyExporter\KeyExporter.cpp" />
     <ClCompile Include="Logger\Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Secp256k1\secp256k1.cpp" />

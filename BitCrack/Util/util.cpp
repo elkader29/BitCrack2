@@ -119,6 +119,40 @@ namespace util {
 		return val;
 	}
 
+	uint64_t parseFileSize(const std::string& s)
+	{
+		std::string lower = toLower(s);
+		uint64_t multiplier = 1;
+
+		size_t suffixPos = std::string::npos;
+
+		if ((suffixPos = lower.find("kb")) != std::string::npos) {
+			multiplier = 1024ULL;
+		}
+		else if ((suffixPos = lower.find("mb")) != std::string::npos) {
+			multiplier = 1024ULL * 1024;
+		}
+		else if ((suffixPos = lower.find("gb")) != std::string::npos) {
+			multiplier = 1024ULL * 1024 * 1024;
+		}
+		else if ((suffixPos = lower.find("tb")) != std::string::npos) {
+			multiplier = 1024ULL * 1024 * 1024 * 1024;
+		}
+
+		std::string numPart = lower;
+		if (suffixPos != std::string::npos) {
+			numPart = lower.substr(0, suffixPos);
+		}
+
+		try {
+			uint64_t size = parseUInt64(numPart);
+			return size * multiplier;
+		}
+		catch (...) {
+			throw std::string("Invalid file size format");
+		}
+	}
+
 	bool isHex(const std::string& s)
 	{
 		int len = 0;
@@ -341,5 +375,29 @@ namespace util {
 		size_t right = s.find_last_not_of(c);
 
 		return s.substr(left, right - left + 1);
+	}
+
+	std::string formatSize(uint64_t size)
+	{
+		char buf[128];
+		double friendlySize = (double)size;
+		const char* unit = "B";
+
+		if (size >= 1024ULL * 1024 * 1024 * 1024) {
+			friendlySize /= (1024ULL * 1024 * 1024 * 1024);
+			unit = "TB";
+		} else if (size >= 1024ULL * 1024 * 1024) {
+			friendlySize /= (1024ULL * 1024 * 1024);
+			unit = "GB";
+		} else if (size >= 1024ULL * 1024) {
+			friendlySize /= (1024ULL * 1024);
+			unit = "MB";
+		} else if (size >= 1024) {
+			friendlySize /= 1024;
+			unit = "KB";
+		}
+
+		sprintf(buf, "%.2f%s", friendlySize, unit);
+		return std::string(buf);
 	}
 }

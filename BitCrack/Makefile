@@ -14,6 +14,7 @@ SRC =   AddrUtil/Base58.cpp                \
         KeyFinder/ConfigFile.cpp           \
         KeyFinder/DeviceManager.cpp        \
         KeyFinder/KeyFinder.cpp            \
+        KeyExporter/KeyExporter.cpp        \
         Logger/Logger.cpp                  \
         main.cpp                           \
         Secp256k1/secp256k1.cpp            \
@@ -34,6 +35,7 @@ OBJET = $(addprefix $(OBJDIR)/,            \
         KeyFinder/ConfigFile.o             \
         KeyFinder/DeviceManager.o          \
         KeyFinder/KeyFinder.o              \
+        KeyExporter/KeyExporter.o          \
         Logger/Logger.o                    \
         main.o                             \
         Secp256k1/secp256k1.o              \
@@ -46,8 +48,8 @@ OBJET = $(addprefix $(OBJDIR)/,            \
         CudaDevice/BitCrack-link.o)
 
 CXX        = g++
-CUDA       = /usr/local/cuda-11.0
-CXXCUDA    = /usr/bin/g++
+CUDA       = /usr/local/cuda-12.8
+CXXCUDA    = g++
 NVCC       = $(CUDA)/bin/nvcc
 # nvcc requires joint notation w/o dot, i.e. "5.2" -> "52"
 ccap       = $(shell echo $(CCAP) | tr -d '.')
@@ -107,6 +109,9 @@ $(OBJDIR)/CudaUtil: $(OBJDIR)
 $(OBJDIR)/KeyFinder: $(OBJDIR)
 	cd $(OBJDIR) &&	mkdir -p KeyFinder
 
+$(OBJDIR)/KeyExporter: $(OBJDIR)
+	cd $(OBJDIR) &&	mkdir -p KeyExporter
+
 $(OBJDIR)/Logger: $(OBJDIR)
 	cd $(OBJDIR) &&	mkdir -p Logger
 
@@ -131,4 +136,3 @@ clean:
 	@rm -f obj/Secp256k1/*.o
 	@rm -f obj/Util/*.o
 	@rm -f obj/CudaDevice/*.o
-

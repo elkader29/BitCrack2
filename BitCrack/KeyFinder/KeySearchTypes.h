@@ -52,6 +52,7 @@ typedef struct {
 	secp256k1::uint256 nextKey;
 	secp256k1::uint256 stride;
 	uint32_t rStrideCount;
+	uint64_t fileSize;
 }KeySearchStatus;
 
 

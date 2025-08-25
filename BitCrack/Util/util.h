@@ -27,6 +27,7 @@ namespace util {
 
 	uint32_t parseUInt32(std::string s);
 	uint64_t parseUInt64(std::string s);
+	uint64_t parseFileSize(const std::string& s);
 	bool isHex(const std::string& s);
 	bool appendToFile(const std::string& fileName, const std::string& s);
 	bool readLinesFromStream(std::istream& in, std::vector<std::string>& lines);
@@ -36,6 +37,7 @@ namespace util {
 	std::string format(uint32_t value);
 	std::string format(uint64_t value);
 	std::string format(int value);
+	std::string formatSize(uint64_t size);
 	void removeNewline(std::string& s);
 	unsigned int endian(unsigned int x);
 

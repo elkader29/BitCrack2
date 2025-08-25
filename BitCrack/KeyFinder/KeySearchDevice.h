@@ -34,6 +34,13 @@ typedef struct {
 	bool compressed;
 }KeySearchResult;
 
+
+typedef struct {
+	secp256k1::uint256 privateKey;
+	secp256k1::uint256 x;
+}ExportedKey;
+
+
 // Pure virtual class representing a device that performs a key search
 class KeySearchDevice {
 
@@ -54,6 +61,9 @@ public:
 	// Get the private keys that have been found so far
 	virtual size_t getResults(std::vector<KeySearchResult>& results) = 0;
 
+	// Get all the generated keys from the last step
+	virtual size_t getExportedKeys(std::vector<ExportedKey>& keys) = 0;
+
 	// The number of keys searched at each step
 	virtual uint64_t keysPerStep() = 0;
 
@@ -67,6 +77,8 @@ public:
 
 	// Update stride
 	virtual void updateStride(const secp256k1::uint256& stride) = 0;
+
+	virtual void doExportStep(const std::vector<secp256k1::uint256>& keys) = 0;
 };
 
 #endif
