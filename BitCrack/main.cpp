@@ -11,7 +11,6 @@
 #include "Logger/Logger.h"
 #include "KeyFinder/ConfigFile.h"
 #include "KeyFinder/DeviceManager.h"
-#include "KeyExporter/KeyExporter.h"
 
 #include "CudaDevice/CudaKeySearchDevice.h"
 
@@ -65,10 +64,6 @@ typedef struct _RunConfig {
 	uint32_t randomSrtrideBits = 2;
 
 	bool follow = false;
-
-	// Export mode
-	bool exportMode = false;
-	uint64_t maxFileSize = 0;
 }RunConfig;
 
 static RunConfig _config;
@@ -161,26 +156,19 @@ void statusCallback(KeySearchStatus info)
 	std::string devName = info.deviceName.substr(0, 16);
 	devName += std::string(16 - devName.length(), ' ');
 
-	if (_config.exportMode) {
-		const char* formatStr = "\r[DEV: %s %s/%sMB] [S: %s] [T: %s] [F: %s] [%s] ";
-		std::string totalStr = util::formatThousands(info.total);
-		std::string fileSizeStr = util::formatSize(info.fileSize);
-		printf(formatStr, devName.c_str(), usedMemStr.c_str(), totalMemStr.c_str(), speedStr.c_str(), totalStr.c_str(), fileSizeStr.c_str(), timeStr.c_str());
-	} else {
-		const char* formatStr = NULL;
+	const char* formatStr = NULL;
 
-		if (_config.follow) {
-			formatStr = "[DEV: %s %s/%sMB] [K: %s (%d bit), C: %lf %%] [I: %llX (%d bit), %lu] [T: %s] [S: %s] [%s (%d bit)] [%s]\n";
-		}
-		else {
-			formatStr = "\r[DEV: %s %s/%sMB] [K: %s (%d bit), C: %lf %%] [I: %llX (%d bit), %lu] [T: %s] [S: %s] [%s (%d bit)] [%s] ";
-		}
-
-		printf(formatStr, devName.c_str(), usedMemStr.c_str(), totalMemStr.c_str(), info.nextKey.toString().c_str(),
-			info.nextKey.getBitRange(), getPercantage(info.nextKey), info.stride.toInt64(), info.stride.getBitRange(),
-			info.rStrideCount, targetStr.c_str(), speedStr.c_str(), totalStr.c_str(),
-			secp256k1::uint256(_config.totalkeys + info.total).getBitRange(), timeStr.c_str());
+	if (_config.follow) {
+		formatStr = "[DEV: %s %s/%sMB] [K: %s (%d bit), C: %lf %%] [I: %llX (%d bit), %lu] [T: %s] [S: %s] [%s (%d bit)] [%s]\n";
 	}
+	else {
+		formatStr = "\r[DEV: %s %s/%sMB] [K: %s (%d bit), C: %lf %%] [I: %llX (%d bit), %lu] [T: %s] [S: %s] [%s (%d bit)] [%s] ";
+	}
+
+	printf(formatStr, devName.c_str(), usedMemStr.c_str(), totalMemStr.c_str(), info.nextKey.toString().c_str(),
+		info.nextKey.getBitRange(), getPercantage(info.nextKey), info.stride.toInt64(), info.stride.getBitRange(),
+		info.rStrideCount, targetStr.c_str(), speedStr.c_str(), totalStr.c_str(),
+		secp256k1::uint256(_config.totalkeys + info.total).getBitRange(), timeStr.c_str());
 
 	if (_config.checkpointFile.length() > 0) {
 		uint64_t t = util::getSystemTime();
@@ -263,10 +251,6 @@ void usage()
 	printf("--share M/N                  Divide the keyspace into N equal shares, process the Mth share\n");
 	printf("--continue FILE              Save/load progress from FILE\n");
 	printf("-v, --version                Show version\n");
-	printf("\nExport Mode:\n");
-	printf("-x, --export                 Enable export mode. This will generate and save all private keys and x-points.\n");
-	printf("                             This option disables the search functionality.\n");
-	printf("--max-file-size SIZE         Set the maximum output file size (e.g., 100MB, 2GB, 1TB). The tool will stop when this size is reached.\n");
 }
 
 
@@ -481,31 +465,23 @@ int run()
 		// Get device context
 		KeySearchDevice* device = getDeviceContext(_devices[_config.device], _config.blocks, _config.threads, _config.pointsPerThread);
 
-		if (_config.exportMode) {
-			device->init(_config.nextKey, _config.compression, _config.searchMode, _config.stride);
-			KeyExporter exporter(device, _config.startKey, _config.endKey, _config.resultsFile, _config.maxFileSize);
-			exporter.setStatusCallback(statusCallback);
-			exporter.setStatusInterval(_config.statusInterval);
-			exporter.run();
-		} else {
-			KeyFinder finder(_config.nextKey, _config.endKey, _config.compression, _config.searchMode, device, _config.stride,
-				_config.randomStride, _config.continueAfterEnd, _config.randomSrtrideBits);
+		KeyFinder finder(_config.nextKey, _config.endKey, _config.compression, _config.searchMode, device, _config.stride,
+			_config.randomStride, _config.continueAfterEnd, _config.randomSrtrideBits);
 
-			finder.setResultCallback(resultCallback);
-			finder.setStatusInterval(_config.statusInterval);
-			finder.setStatusCallback(statusCallback);
+		finder.setResultCallback(resultCallback);
+		finder.setStatusInterval(_config.statusInterval);
+		finder.setStatusCallback(statusCallback);
 
-			finder.init();
+		finder.init();
 
-			if (!_config.targetsFile.empty()) {
-				finder.setTargets(_config.targetsFile);
-			}
-			else {
-				finder.setTargets(_config.targets);
-			}
-
-			finder.run();
+		if (!_config.targetsFile.empty()) {
+			finder.setTargets(_config.targetsFile);
 		}
+		else {
+			finder.setTargets(_config.targets);
+		}
+
+		finder.run();
 
 		delete device;
 	}
@@ -561,8 +537,6 @@ int main(int argc, char** argv)
 	bool optThreads = false;
 	bool optBlocks = false;
 	bool optPoints = false;
-	bool optStride = false;
-	bool optRstride = false;
 
 	uint32_t shareIdx = 0;
 	uint32_t numShares = 0;
@@ -616,10 +590,6 @@ int main(int argc, char** argv)
 	parser.add("", "--stride", true);
 	parser.add("", "--rstride", true);
 	parser.add("-v", "--version", false);
-
-	// Export options
-	parser.add("-x", "--export", false);
-	parser.add("", "--max-file-size", true);
 
 
 	try {
@@ -712,7 +682,6 @@ int main(int argc, char** argv)
 				optShares = true;
 			}
 			else if (optArg.equals("", "--stride")) {
-				optStride = true;
 				try {
 					_config.stride = secp256k1::uint256(optArg.arg);
 				}
@@ -732,32 +701,15 @@ int main(int argc, char** argv)
 				_config.follow = true;
 			}
 			else if (optArg.equals("", "--rstride")) {
-				optRstride = true;
 				_config.randomSrtrideBits = util::parseUInt32(optArg.arg);
 				if (_config.randomSrtrideBits > 1) {
 					_config.randomStride = true;
 					_config.continueAfterEnd = true;
 				}
 			}
-			else if (optArg.equals("-x", "--export")) {
-				_config.exportMode = true;
-			}
-			else if (optArg.equals("", "--max-file-size")) {
-				_config.maxFileSize = util::parseFileSize(optArg.arg);
-			}
 		}
 		catch (std::string err) {
 			Logger::log(LogLevel::Error, "Error " + opt + ": " + err);
-			return 1;
-		}
-	}
-
-	if (_config.exportMode) {
-		if (_config.resultsFile == "Found.txt") {
-			_config.resultsFile = "random_output.csv";
-		}
-		if (optStride || optRstride) {
-			Logger::log(LogLevel::Error, "Error: --stride and --rstride cannot be used with --export mode.");
 			return 1;
 		}
 	}
@@ -780,44 +732,46 @@ int main(int argc, char** argv)
 	}
 
 	// Parse operands
-	std::vector<std::string> ops = parser.getOperands();
+	if (!_config.exportMode) {
+		std::vector<std::string> ops = parser.getOperands();
 
-	// If there are no operands, then we must be reading from a file, otherwise
-	if (_config.searchMode == SearchMode::ADDRESS) {
-		// expect addresses on the commandline
-		if (ops.size() == 0) {
-			if (_config.targetsFile.length() == 0) {
-				Logger::log(LogLevel::Error, "Missing arguments");
-				usage();
-				return 1;
+		// If there are no operands, then we must be reading from a file, otherwise
+		if (_config.searchMode == SearchMode::ADDRESS) {
+			// expect addresses on the commandline
+			if (ops.size() == 0) {
+				if (_config.targetsFile.length() == 0) {
+					Logger::log(LogLevel::Error, "Missing arguments");
+					usage();
+					return 1;
+				}
+			}
+			else {
+				for (unsigned int i = 0; i < ops.size(); i++) {
+					if (!Address::verifyAddress(ops[i])) {
+						Logger::log(LogLevel::Error, "Invalid address '" + ops[i] + "'");
+						return 1;
+					}
+					_config.targets.push_back(ops[i]);
+				}
 			}
 		}
 		else {
-			for (unsigned int i = 0; i < ops.size(); i++) {
-				if (!Address::verifyAddress(ops[i])) {
-					Logger::log(LogLevel::Error, "Invalid address '" + ops[i] + "'");
+			// expect xpoints on the commandline
+			if (ops.size() == 0) {
+				if (_config.targetsFile.length() == 0) {
+					Logger::log(LogLevel::Error, "Missing arguments");
+					usage();
 					return 1;
 				}
-				_config.targets.push_back(ops[i]);
 			}
-		}
-	}
-	else {
-		// expect xpoints on the commandline
-		if (ops.size() == 0) {
-			if (_config.targetsFile.length() == 0) {
-				Logger::log(LogLevel::Error, "Missing arguments");
-				usage();
-				return 1;
-			}
-		}
-		else {
-			for (unsigned int i = 0; i < ops.size(); i++) {
-				if (!XPoint::verifyXPoint(ops[i])) {
-					Logger::log(LogLevel::Error, "Invalid xpoint '" + ops[i] + "'");
-					return 1;
+			else {
+				for (unsigned int i = 0; i < ops.size(); i++) {
+					if (!XPoint::verifyXPoint(ops[i])) {
+						Logger::log(LogLevel::Error, "Invalid xpoint '" + ops[i] + "'");
+						return 1;
+					}
+					_config.targets.push_back(ops[i]);
 				}
-				_config.targets.push_back(ops[i]);
 			}
 		}
 	}
