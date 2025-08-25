@@ -54,7 +54,7 @@ NVCC       = $(CUDA)/bin/nvcc
 # nvcc requires joint notation w/o dot, i.e. "5.2" -> "52"
 ccap       = $(shell echo $(CCAP) | tr -d '.')
 
-CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -O2 -I. -I$(CUDA)/include -I/usr/include/x86_64-linux-gnu
+CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -O2 -I. -I$(CUDA)/include
 LFLAGS     = -lgmp -lpthread -L$(CUDA)/lib64 -lcudart -lcudadevrt
 
 
