@@ -89,7 +89,7 @@ BitCrack: $(OBJET)
 	
 	$(CXX) $(OBJET) $(LFLAGS) -o BitCrack
 
-$(OBJET): | $(OBJDIR) $(OBJDIR)/AddrUtil $(OBJDIR)/CmdParse $(OBJDIR)/CryptoUtil $(OBJDIR)/CudaUtil $(OBJDIR)/KeyFinder $(OBJDIR)/Logger $(OBJDIR)/Secp256k1 $(OBJDIR)/Util $(OBJDIR)/CudaDevice
+$(OBJET): | $(OBJDIR) $(OBJDIR)/AddrUtil $(OBJDIR)/CmdParse $(OBJDIR)/CryptoUtil $(OBJDIR)/CudaUtil $(OBJDIR)/KeyFinder $(OBJDIR)/KeyExporter $(OBJDIR)/Logger $(OBJDIR)/Secp256k1 $(OBJDIR)/Util $(OBJDIR)/CudaDevice
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
