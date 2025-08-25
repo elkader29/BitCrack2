@@ -223,7 +223,6 @@ uint256 uint256::div(const uint256& val) const
 	//uint32_t kWords[8] = { 0 };
 	//kWords[7] = val;
 	uint256 k0(val.v);
-	printf("\n%s ", k0.toString().c_str());
 
 	int shiftCount = 0 * 32;
 

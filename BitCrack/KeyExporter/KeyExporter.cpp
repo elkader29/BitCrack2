@@ -56,6 +56,8 @@ void KeyExporter::run()
         std::vector<ExportedKey> exportedKeys;
         _device->getExportedKeys(exportedKeys);
 
+        Logger::log(LogLevel::Info, "Exported " + std::to_string(exportedKeys.size()) + " keys");
+
         for (const auto& key : exportedKeys) {
 			secp256k1::uint256 privateKey(key.privateKey, secp256k1::uint256::BigEndian);
 			secp256k1::uint256 x(key.x, secp256k1::uint256::BigEndian);
